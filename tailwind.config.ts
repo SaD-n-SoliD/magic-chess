@@ -15,6 +15,12 @@ const config: Config = {
 			},
 			lineHeight: {
 				tight: '1.2'
+			},
+			colors: {
+				'neo-black': '#5d5956',
+				'neo-black-shadow': '#32302e',
+				'board-light': '#ececd0',
+				'board-dark': '#729551',
 			}
 		},
 	},

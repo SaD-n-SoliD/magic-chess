@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./null.css";
 import "./globals.css";
+import clsx from "clsx";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -17,7 +18,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="ru">
-			<body className={inter.className}>{children}</body>
+			<body className={clsx(inter.className, 'text-slate-900')}>{children}</body>
 		</html>
 	);
 }
