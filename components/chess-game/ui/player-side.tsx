@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import clsx from 'clsx';
 
-import whiteKingSrc from '@/public/images/pieces/w_king.png';
-import blackKingSrc from '@/public/images/pieces/b_king.png';
+import whiteKingSrc from '@/public/images/pieces/white_king.png';
+import blackKingSrc from '@/public/images/pieces/black_king.png';
 
 type props = {
 	className?: string
