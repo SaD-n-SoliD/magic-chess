@@ -9,10 +9,8 @@ export const CELL_SIZE = 75
 // cells in field
 export const FIELD_SIZE = 8
 
-export const CELL_LABELS = {
-	row: '87654321',
-	col: 'abcdefgh',
-} as const
+export const COL_LABELS = 'abcdefghijklmnopqrstuvwxyz'
+export const ROW_LABELS = new Array(FIELD_SIZE).fill(0).map((_, i) => i + 1)
 
 export const SIDES = {
 	black: 'black',
@@ -69,7 +67,8 @@ export type TCell = {
 
 	}
 }
-type TPiecePositions = { [key: number]: TPiece }
+
+export type TPiecePositions = { [key: number]: TPiece }
 
 const INITIAL_BLACK_POSITIONS = {
 	0: 'rook', 1: 'knight', 2: 'bishop', 3: 'queen',
