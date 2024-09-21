@@ -1,13 +1,14 @@
 import clsx from "clsx"
-import { CELL_LABELS } from "../constants"
+import { COL_LABELS, FIELD_SIZE, ROW_LABELS } from "../constants"
 
 type props = {
 	index: number
+	children?: React.ReactNode
 }
 
-export function GameCell({ index }: props) {
-	const row = Math.floor(index / 8)
-	const col = index % 8
+export function GameCell({ index, children }: props) {
+	const row = Math.floor(index / FIELD_SIZE)
+	const col = index % FIELD_SIZE
 
 	return (
 		<button className={clsx(
@@ -17,15 +18,15 @@ export function GameCell({ index }: props) {
 			"flex items-center justify-center relative"
 		)}
 		>
-
+			{children}
 			{col === 0 &&
 				<div className="absolute top-1 left-1 leading-tight">
-					{CELL_LABELS.row[row]}
+					{ROW_LABELS[FIELD_SIZE - 1 - row]}
 				</div>
 			}
-			{row === 7 &&
+			{row === FIELD_SIZE - 1 &&
 				<div className="absolute bottom-px right-1 leading-tight">
-					{CELL_LABELS.col[col]}
+					{COL_LABELS[col]}
 				</div>
 			}
 		</button>

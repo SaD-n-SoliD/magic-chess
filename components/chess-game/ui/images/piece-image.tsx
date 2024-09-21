@@ -7,17 +7,19 @@ const imageList = images.keys().map(image => images(image));
 type props = {
 	piece: TPiece
 	side: TSide
+	className?: string
 }
 
-export function PieceImage({ piece, side }: props) {
+export function PieceImage({ piece, side, className }: props) {
 	return (
 		<Image
+			className={className}
 			src={
 				imageList.find(
 					el => el.default.src.includes(`${side}_${piece}`)
 				)?.default
 			}
-			alt="piece"
+			alt={`${side} ${piece}`}
 		/>
 	)
 }

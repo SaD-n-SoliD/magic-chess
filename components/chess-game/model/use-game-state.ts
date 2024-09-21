@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { INITIAL_CELLS, SIDES, TCell, TSide } from "../constants"
 
 
 type params = null | {
@@ -6,15 +7,15 @@ type params = null | {
 }
 
 type TGameState = {
-	cells: Array<number | null>
-	currentMove: 'w' | 'b'
+	cells: Array<TCell>
+	currentMove: TSide
 }
 
 export function useGameState(_: params) {
 	const [{ cells, currentMove }, setGameState] = useState<TGameState>(
 		() => ({
-			cells: new Array(8 * 8).fill(null),
-			currentMove: 'w'
+			cells: INITIAL_CELLS,
+			currentMove: SIDES.white,
 		})
 	)
 

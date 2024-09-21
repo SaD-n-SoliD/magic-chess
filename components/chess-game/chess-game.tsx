@@ -11,6 +11,7 @@ import { UiButton } from "../uikit/ui-button"
 
 import { PLAYERS } from "./constants"
 import { useGameState } from "./model/use-game-state"
+import { PieceImage } from "./ui/images/piece-image"
 
 type props = {
 
@@ -38,7 +39,11 @@ export function ChessGame({ }: props) {
 					<UiButton size="md" variant="outline">Сдаться</UiButton>
 				</>
 			}
-			gameCells={cells.map((cell, i) => <GameCell key={i} index={i} />)}
+			gameCells={cells.map((cell, i) =>
+				<GameCell key={i} index={i} >
+					{cell.piece && <PieceImage piece={cell.piece.type} side={cell.piece.side} />}
+				</GameCell>
+			)}
 		/>
 	)
 }

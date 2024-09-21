@@ -1,3 +1,4 @@
+import { CELL_SIZE, FIELD_SIZE } from "../constants"
 
 type props = {
 	backLink: JSX.Element
@@ -8,9 +9,6 @@ type props = {
 	actions: JSX.Element
 	gameCells: React.ReactNode
 }
-
-// px
-const cellSize = 75
 
 export function GameLayout({ backLink, title, gameInfo, playersList, gameMoveInfo, actions, gameCells }: props) {
 	return (
@@ -34,7 +32,7 @@ export function GameLayout({ backLink, title, gameInfo, playersList, gameMoveInf
 				</div>
 				<div
 					className="grid grid-cols-[--grid-rows] grid-rows-[--grid-rows] mt-3"
-					style={{ '--grid-rows': `repeat(8, ${cellSize}px)` } as React.CSSProperties}
+					style={{ '--grid-rows': `repeat(${FIELD_SIZE}, ${CELL_SIZE}px)` } as React.CSSProperties}
 				>
 					{gameCells}
 				</div>
