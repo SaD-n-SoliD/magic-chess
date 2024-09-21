@@ -22,7 +22,7 @@ export function ChessGame({ }: props) {
 	return (
 		<GameLayout
 			backLink={<BackLink />}
-			title={<GameTitle />}
+			title={<GameTitle title="Магические шахматы" />}
 			gameInfo={<GameInfo isRatingGame timeMode="1 мин на ход" />}
 			playersList={PLAYERS.map((player, i) =>
 				<PlayerInfo
