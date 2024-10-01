@@ -1,9 +1,9 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Магические Шахматы
+# Магические Шахматы
 Стек : Next.js, React.js, Typescript, Tailwind.css
 
-## Демо:
+### Демо:
 https://magic-chess.vercel.app/
 
 ## Getting Started
