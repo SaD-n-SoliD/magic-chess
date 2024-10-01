@@ -3,6 +3,8 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 ## Магические Шахматы
 Стек : Next.js, React.js, Typescript, Tailwind.css
 
+## Демо:
+https://magic-chess.vercel.app/
 
 ## Getting Started
 
