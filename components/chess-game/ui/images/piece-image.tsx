@@ -1,11 +1,11 @@
 import Image from "next/image";
-import { TPiece, TSide } from "../../constants";
+import { TPieceType, TSide } from "../../constants";
 
 const images = require.context('/public/images/pieces', false);
 const imageList = images.keys().map(image => images(image));
 
 type props = {
-	piece: TPiece
+	piece: TPieceType
 	side: TSide
 	className?: string
 }

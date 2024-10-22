@@ -21,6 +21,8 @@ const config: Config = {
 				'neo-black-shadow': '#32302e',
 				'board-light': '#ececd0',
 				'board-dark': '#729551',
+				'board-selection': '#ffff3380',
+				'board-hint': 'rgba(0, 0, 0, .14)',
 			}
 		},
 	},

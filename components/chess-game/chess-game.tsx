@@ -10,18 +10,25 @@ import { GameCell } from "./ui/game-cell"
 import { UiButton } from "../uikit/ui-button"
 
 import { PLAYERS } from "./constants"
-import { useGameState } from "./model/use-game-state"
 import { PieceImage } from "./ui/images/piece-image"
+import { useGameState } from "./model/use-game-state"
 
 type props = {
 
 }
 
 export function ChessGame({ }: props) {
-	const [{ cells }, setGameState] = useGameState(null)
+	const {
+		cells,
+		availableMoves,
+		highlightedCells,
+		onClickGameField,
+		onBlur,
+	} = useGameState(null)
 
 	return (
 		<GameLayout
+			onBlur={onBlur}
 			backLink={<BackLink />}
 			title={<GameTitle title="Магические шахматы" />}
 			gameInfo={<GameInfo isRatingGame timeMode="1 мин на ход" />}
@@ -39,9 +46,22 @@ export function ChessGame({ }: props) {
 					<UiButton size="md" variant="outline">Сдаться</UiButton>
 				</>
 			}
+			onClickGameField={onClickGameField}
 			gameCells={cells.map((cell, i) =>
-				<GameCell key={i} index={i} >
-					{cell.piece && <PieceImage piece={cell.piece.type} side={cell.piece.side} />}
+				<GameCell
+					key={i}
+					index={i}
+					isAvailableToMove={availableMoves[i]}
+					isHighlighted={highlightedCells[i]}
+					containsPiece={!!cell.piece}
+				>
+					{cell.piece &&
+						<PieceImage
+							piece={cell.piece.type}
+							side={cell.piece.side}
+							className="z-10 cursor-pointer"
+						/>
+					}
 				</GameCell>
 			)}
 		/>

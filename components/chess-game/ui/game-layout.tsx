@@ -1,6 +1,7 @@
-import { CELL_SIZE, FIELD_SIZE } from "../constants"
+import { CELL_SIZE, FIELD_LENGTH } from "../constants"
 
 type props = {
+	onBlur: React.FocusEventHandler
 	backLink: JSX.Element
 	title: JSX.Element
 	gameInfo: JSX.Element
@@ -8,11 +9,22 @@ type props = {
 	gameMoveInfo: JSX.Element
 	actions: JSX.Element
 	gameCells: React.ReactNode
+	onClickGameField: React.MouseEventHandler
 }
 
-export function GameLayout({ backLink, title, gameInfo, playersList, gameMoveInfo, actions, gameCells }: props) {
+export function GameLayout({
+	onBlur,
+	backLink,
+	title,
+	gameInfo,
+	playersList,
+	gameMoveInfo,
+	actions,
+	gameCells,
+	onClickGameField,
+}: props) {
 	return (
-		<div className="pb-10">
+		<div className="GameLayout pb-10" onBlur={onBlur}>
 			<div className="pl-2">
 				{backLink}
 				{title}
@@ -31,8 +43,9 @@ export function GameLayout({ backLink, title, gameInfo, playersList, gameMoveInf
 					{actions}
 				</div>
 				<div
+					onClick={onClickGameField}
 					className="grid grid-cols-[--grid-rows] grid-rows-[--grid-rows] mt-3"
-					style={{ '--grid-rows': `repeat(${FIELD_SIZE}, ${CELL_SIZE}px)` } as React.CSSProperties}
+					style={{ '--grid-rows': `repeat(${FIELD_LENGTH}, ${CELL_SIZE}px)` } as React.CSSProperties}
 				>
 					{gameCells}
 				</div>
