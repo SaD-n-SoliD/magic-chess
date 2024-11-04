@@ -1,26 +1,28 @@
-import { CELL_POSITIONS, TCellId } from "../../constants";
-import { mkCellFlags, mkId, TCellFlags } from "../../utils";
-import { Piece } from "../piece";
+import { TCellId } from "../../constants";
+import { mkCellFlags, mkCellId, T2DVector, TCellFlags } from "../../utils";
+import { Piece, TPieceAttack, TPieceMoves, TValidMoves } from "../piece";
 
 
 export class Rook extends Piece {
 
-	isValidMove(destination: TCellId): boolean {
-		return this.getValidMoves()[destination]
-	}
+	attackVectors: T2DVector[] = [
+		// Вниз
+		[1, 0],
+		// Вверх
+		[-1, 0],
+		// Вправо
+		[0, 1],
+		// Влево
+		[0, -1],
+	]
 
-	getValidMoves(): TCellFlags {
-		const vectors = [
-			// Вперёд
-			[1, 0],
-			// Назад
-			[-1, 0],
-			// Вправо
-			[0, 1],
-			// Влево
-			[0, -1],
-		]
-		return mkCellFlags(this.multiVectorDestinations(vectors).idList)
+	attackOptions: TPieceAttack[] = this.attackVectors.map((v) => ({
+		vector: v,
+		range: Infinity,
+	}))
+
+	computeValidMoves(): TValidMoves {
+		return [this.multiVectorDestinations(this.attackOptions).moves]
 	}
 
 }

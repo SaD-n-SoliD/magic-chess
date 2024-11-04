@@ -9,17 +9,12 @@ type params = null | {
 
 export function useGameState(_: params) {
 
-	const [highlightedCells, setHighlightedCells] =
-		useState<boolean[]>(INITIAL_HIGHLIGHTED_CELLS)
-
-	// // Id ячейки, содержащей фигуру, которую выбрал пользователь для хода
-	// const [selectedPiece, setSelectedPiece] = useState<TCellId | null>(null)
-
 	const [gameField, setGameField] = useState<GameField>()
 
 	// Инициализация и установка игрового поля
 	useEffect(() => {
 		const gameField = new GameField(INITIAL_CELLS, setGameField)
+		gameField.init()
 		setGameField(gameField)
 	}, [])
 
@@ -27,7 +22,7 @@ export function useGameState(_: params) {
 		currentMove: gameField?.currentMove,
 		cells: gameField?.cells || [],
 		availableMoves: gameField?.availableMoves || [],
-		highlightedCells,
+		highlightedCells: gameField?.highlightedCells || [],
 		onClickGameField,
 		onBlur,
 	} as const

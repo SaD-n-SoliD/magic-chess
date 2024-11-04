@@ -1,26 +1,27 @@
-import { CELL_POSITIONS, TCellId } from "../../constants";
-import { mkCellFlags, TCellFlags } from "../../utils";
-import { Piece } from "../piece";
+import { TCellId } from "../../constants";
+import { mkCellFlags, T2DVector, TCellFlags } from "../../utils";
+import { Piece, TPieceAttack, TPieceMoves, TValidMoves } from "../piece";
 
 
 export class Knight extends Piece {
 
-	isValidMove(destination: TCellId): boolean {
-		return this.getValidMoves()[destination]
-	}
+	attackVectors: T2DVector[] = [
+		// Вниз
+		[2, 1], [2, -1],
+		// Вниз, в сторону
+		[1, 2], [1, -2],
+		// Вверх, в сторону
+		[-1, 2], [-1, -2],
+		// Вверх
+		[-2, 1], [-2, -1],
+	]
 
-	getValidMoves(): TCellFlags {
-		const vectors = [
-			// Вперёд
-			[2, 1], [2, -1],
-			// Вперёд, в сторону
-			[1, 2], [1, -2],
-			// Назад, в сторону
-			[-1, 2], [-1, -2],
-			// Назад
-			[-2, 1], [-2, -1],
-		]
-		return mkCellFlags(this.multiVectorDestinations(vectors, 1).idList)
+	attackOptions: TPieceAttack[] = this.attackVectors.map((v) => ({
+		vector: v,
+		range: 1,
+	}))
 
+	computeValidMoves(): TValidMoves {
+		return [this.multiVectorDestinations(this.attackOptions).moves]
 	}
 }

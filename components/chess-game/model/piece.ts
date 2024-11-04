@@ -1,7 +1,7 @@
 import { DeepPartial } from "@/utils/types/deep-partial"
-import { CELL_POSITIONS, FIELD_HEIGHT, FIELD_LENGTH, SIDES, TCellId, TCol, TPieceType, TRow, TSide } from "../constants"
+import { FIELD_HEIGHT, FIELD_LENGTH, SIDES, TCellId, TCol, TPieceType, TRow, TSide } from "../constants"
 import { Cell } from "./cell"
-import { TCellFlags } from "../utils"
+import { getCellPosition, mkCellFlags, T2DVector, TCellFlags, TUnitVector, TVector } from "../utils"
 
 //? todo Добавить id в piece (constants, формат сообщения от сервера?)
 export type TPiece = {
@@ -14,22 +14,42 @@ export type TPiece = {
 
 export type TPiecePart = DeepPartial<TPiece>
 
-export type TUnitVector = 1 | 0 | -1
-export type TVector = number[]
+type TObstacle = {
+	pos: [TRow, TCol]
+	id: TCellId
+	cell: Cell
+}
 
 export type TVectorDestinations = {
-	idList: TCellId[]
-	obstacle: null | {
-		pos: [TRow, TCol]
-		id: TCellId
-		cell: Cell
-	}
+	moves: TPieceMoves
+	potentialMoves: TPieceMoves
+	obstacles: TObstacle[]
 }
 
 export type TMultiVectorDestinations = {
-	idList: TCellId[]
+	moves: TPieceMoves
 	data: TVectorDestinations[]
 }
+
+export type TPieceAttack = {
+	vector: T2DVector
+	// Дальность атаки в длинах вектора
+	range?: number
+	// Пронзание навылет
+	punchThrough?: number
+}
+
+export type TVectorDestinationOptions = {
+	vector: T2DVector
+	// Дальность атаки в длинах вектора
+	range?: number
+	// Пронзание навылет
+	punchThrough?: number
+}
+
+export type TPieceMoves = TCellId[]
+
+export type TValidMoves = [TPieceMoves, TPieceMoves?, TPieceMoves?, TPieceMoves?]
 
 export interface Piece extends TPiece { }
 
@@ -38,9 +58,21 @@ export abstract class Piece {
 	// todo Менять на false при первом ходе фигуры
 	public isFirstMove = true
 	// Единичный вектор направления (вдоль y), зависящий от цвета (side)
-	public vy = 0
+	public vy: TUnitVector = 0
 	public cells: Cell[] = []
 	public cellId: TCellId
+	// Потенциальные ходы, не учитывающие никакие условия кроме наличия препятствий на пути 
+	public potentialMoves: TPieceMoves = []
+	// Потенциально битые поля
+	public potentialAttacks: TPieceMoves = []
+	public availableAttacks: TPieceMoves = []
+	public availableMoves: TPieceMoves = []
+	public availableMoveFlags: TCellFlags = []
+	abstract attackOptions: TPieceAttack[]
+	// todo Разделить вычисление атак и ходов
+	// returns: [validMoves, potentialMoves]
+	//* Получение potentialMoves из vectorDestinations().potentialMoves позволит нормально обновлять ранее перекрытые ходы фигур, которые не могут есть в направлении перекрытия
+	abstract computeValidMoves(): TValidMoves
 
 	constructor(piece: TPiece, cellId: TCellId) {
 		Object.assign(this, piece)
@@ -50,99 +82,111 @@ export abstract class Piece {
 		else if (piece.side === SIDES.black) this.vy = 1
 	}
 
-	//! Вызывать при изменении сслыки на cells
+	//* Вызывать при изменении сслыки на cells
 	saveCells(cells: Cell[]) {
 		this.cells = cells
 	}
-	//! Вызывать при перемещении фигуры
+	//* Вызывать при перемещении фигуры
 	saveCellId(cellId: TCellId) {
 		this.cellId = cellId
 	}
 
+	//* После внешних проверок
 	isValidMove(destination: TCellId) {
-		return false
+		return this.availableMoveFlags[destination]
 	}
 
-	getValidMoves(): TCellFlags {
+	isCellAttacked(destination: TCellId) {
+		return this.availableAttacks.includes(destination)
+	}
 
-		const validMoves: TCellFlags = {}
-		for (const id of this.cells.keys()) {
-			validMoves[id] = this.isValidMove(id)
-		}
-		return validMoves
+	isPotentialMove(destination: TCellId) {
+		return this.potentialMoves.includes(destination)
+	}
+
+	isPotentialAttack(destination: TCellId) {
+		return this.potentialAttacks.includes(destination)
+	}
+	// todo Сделать понятное разграничение на до/после внешних проверок. Выяснить, что из этого действительно нужно
+	updateValidMoves(externalChecks: (arr: TPieceMoves) => TPieceMoves = (d) => (d)) {
+		const [moves, attacks, pMoves, pAttacks] = this.computeValidMoves()
+		this.availableMoves = moves
+		this.availableAttacks = attacks || moves
+		this.potentialMoves = pMoves || moves
+		this.potentialAttacks = pAttacks || moves
+		return this.availableMoveFlags = mkCellFlags(externalChecks(moves))
 	}
 
 	// Соберёт id'шники всех ячеек, которые оказались свободными вдоль указанных направлений (векторов)
 	// Также соберёт отдельно информацию по каждому из направлений, включая первое встреченное препятствие
-	multiVectorDestinations(vectors: TVector[], steps: number[] | number = Infinity)
-		: TMultiVectorDestinations {
-
-		const vSteps = (() => {
-			if (Array.isArray(steps))
-				return steps
-			else
-				return vectors.map(_ => steps)
-		})()
+	multiVectorDestinations(multiOptions: TVectorDestinationOptions[]): TMultiVectorDestinations {
 
 		const res: TMultiVectorDestinations = {
-			idList: [],
+			moves: [],
 			data: [],
 		}
 
-		for (const [i, vector] of vectors.entries()) {
-			const vd = this.vectorDestinations(vector, vSteps[i])
+		for (const options of multiOptions) {
+			const vd = this.vectorDestinations(options)
 			res.data.push(vd)
-			res.idList.push(...vd.idList)
+			res.moves.push(...vd.moves)
 		}
 		return res
 	}
 
 	// Соберёт id'шники всех ячеек, которые оказались свободными вдоль указанного направления (вектора)
-	// Про встрече с объектом, который вохможно атаковать: останавливаем продвижение, но не считаем этот объект препятствием
-	// Начинаем с текущей ячейки (this.cellId)
+	// Также соберёт информацию обо всех встреченных препятствиях, учитывая пронзание навылет
+	// Начинаем с текущей ячейки(this.cellId) не включая её
 	// Размер шага вдоль вектора зависит от самого вектора. [dy, dx]
-	// Также найдёт id и pos первого встреченного препятствия (obstacle)
-	// Если препятствий не нашлось, obstacle === null
-	vectorDestinations(direction: TVector, steps = Infinity): TVectorDestinations {
-		//! Формат вектора
-		const [dy, dx] = direction
+	vectorDestinations({ vector: [dy, dx], range = Infinity, punchThrough = 1 }: TVectorDestinationOptions): TVectorDestinations {
 		if (!dx && !dy) throw new Error("Вектор [0, 0] не подходит");
 
-		let [row, col] = CELL_POSITIONS[this.cellId]
-		let dest: TCellId[] = []
+		let [row, col] = getCellPosition(this.cellId)
+		const dest: TCellId[] = []
+		const obstacles: TObstacle[] = []
 
 		col += dx
 		row += dy
 
 		let id = row * FIELD_LENGTH + col
 
-		const mkRes = (isPassible: boolean): TVectorDestinations => ({
-			idList: dest,
-			obstacle: isPassible ? null : {
-				pos: [row, col],
-				id,
-				cell: this.cells[id],
-			}
+		const mkRes = (): TVectorDestinations => ({
+			moves: dest,
+			// Используется при punchThrough = 0 для отслеживания изменений на клетке с препятствием
+			potentialMoves: !punchThrough && obstacles.length ? dest.concat(id) : dest,
+			obstacles,
 		})
 
-		let counter = 0
+		const mkObstacle = (): TObstacle => ({
+			pos: [row, col],
+			id,
+			cell: this.cells[id],
+		})
 
-		while (counter < steps && row >= 0 && row < FIELD_HEIGHT && col >= 0 && col < FIELD_LENGTH) {
-			// Если в ячейке есть нечто, что можно атаковать, то не считаем это за препятствие, но останавливаем продвижение
-			if (this.cells[id].isBeatable) {
-				dest.push(id)
-				return mkRes(true)
+		while (
+			dest.length < range &&
+			(obstacles.length < punchThrough || punchThrough === 0) &&
+			row >= 0 && row < FIELD_HEIGHT &&
+			col >= 0 && col < FIELD_LENGTH
+		) {
+			// Если ячейка содержит препятствие, обновляем препятствия
+			if (!this.cells[id].isPassable) {
+				obstacles.push(mkObstacle())
+				// Если фигура не может бить в этом направлении, выходим (препятствие не попадёт в idList)
+				if (punchThrough === 0) break
 			}
-			// Если ячейка непроходима, то мы закончили
-			if (!this.cells[id].isPassable) return mkRes(false)
+
+			// Если ячейка недостижима, выходим (препятствие не попадёт в idList)
+			if (this.cells[id].isUnreachable)
+				break
+
 			dest.push(id)
 			col += dx
 			row += dy
 			id = row * FIELD_LENGTH + col
-			counter++
 		}
-		// Нет препятствий до границы поля или до границы проверки (steps)
-		return mkRes(true)
+
+		return mkRes()
 	}
 
 }

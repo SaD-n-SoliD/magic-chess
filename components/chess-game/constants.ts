@@ -119,13 +119,6 @@ export const INITIAL_CELLS = (() => {
 	return CELLS
 })()
 
-// id -> [row, col] 
-// id -> [y, x]
-export const CELL_POSITIONS =
-	new Array(FIELD_SIZE)
-		.fill(null)
-		.map((_, i) => [Math.floor(i / FIELD_LENGTH), i % FIELD_LENGTH]) as [TRow, TCol][]
-
 export const INITIAL_HIGHLIGHTED_CELLS = INITIAL_CELLS.map(_ => false)
 
 

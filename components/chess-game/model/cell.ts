@@ -59,6 +59,11 @@ export class Cell {
 	get isBeatable() {
 		return !!this.piece
 	}
+
+	// Непреодолимое препятствие
+	get isUnreachable() {
+		return !this.isPassable && !this.isBeatable
+	}
 }
 
 

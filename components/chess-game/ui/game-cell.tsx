@@ -1,5 +1,6 @@
 import clsx from "clsx"
-import { CELL_POSITIONS, COL_LABELS, FIELD_LENGTH, ROW_LABELS, TCellId } from "../constants"
+import { COL_LABELS, FIELD_LENGTH, ROW_LABELS, TCellId } from "../constants"
+import { getCellPosition } from "../utils"
 
 type props = {
 	index: TCellId
@@ -10,7 +11,7 @@ type props = {
 }
 
 export function GameCell({ index, isAvailableToMove, isHighlighted, containsPiece, children }: props) {
-	const [row, col] = CELL_POSITIONS[index]
+	const [row, col] = getCellPosition(index)
 
 	return (
 		<button
@@ -31,6 +32,11 @@ export function GameCell({ index, isAvailableToMove, isHighlighted, containsPiec
 			{row === FIELD_LENGTH - 1 &&
 				<div className="absolute bottom-px right-1 leading-tight">
 					{COL_LABELS[col]}
+				</div>
+			}
+			{process.env.NODE_ENV == "development" &&
+				<div className="absolute top-px right-1 leading-tight text-red-600">
+					{index}
 				</div>
 			}
 			{isHighlighted &&

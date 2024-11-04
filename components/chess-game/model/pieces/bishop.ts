@@ -1,26 +1,28 @@
-import { CELL_POSITIONS, TCellId } from "../../constants";
-import { mkCellFlags, TCellFlags } from "../../utils";
-import { Piece } from "../piece";
+import { TCellId } from "../../constants";
+import { mkCellFlags, T2DVector, TCellFlags } from "../../utils";
+import { Piece, TPieceAttack, TPieceMoves, TValidMoves } from "../piece";
 
 
 export class Bishop extends Piece {
 
-	isValidMove(destination: TCellId): boolean {
-		return this.getValidMoves()[destination]
-	}
+	attackVectors: T2DVector[] = [
+		// Вниз, вправо
+		[1, 1],
+		// Вниз, влево
+		[1, -1],
+		// Вверх, вправо
+		[-1, 1],
+		// Вверх, влево
+		[-1, -1],
+	]
 
-	getValidMoves(): TCellFlags {
-		const vectors = [
-			// Вперёд, вправо
-			[1, 1],
-			// Вперёд, влево
-			[1, -1],
-			// Назад, вправо
-			[-1, 1],
-			// Назад, влево
-			[-1, -1],
-		]
-		return mkCellFlags(this.multiVectorDestinations(vectors).idList)
+	attackOptions: TPieceAttack[] = this.attackVectors.map((v) => ({
+		vector: v,
+		range: Infinity,
+	}))
+
+	computeValidMoves(): TValidMoves {
+		return [this.multiVectorDestinations(this.attackOptions).moves]
 	}
 
 }

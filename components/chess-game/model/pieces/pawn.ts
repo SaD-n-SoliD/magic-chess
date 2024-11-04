@@ -1,29 +1,50 @@
-import { CELL_POSITIONS, TCellId } from "../../constants";
-import { mkId } from "../../utils";
-import { Piece } from "../piece";
+import { TCellId } from "../../constants";
+import { getCellPosition, mkCellFlags, mkCellId, T2DVector, TCellFlags } from "../../utils";
+import { Piece, TPieceAttack, TPieceMoves, TValidMoves } from "../piece";
 
 
 export class Pawn extends Piece {
 
-	isValidMove(destination: TCellId): boolean {
-		const [row, col] = CELL_POSITIONS[this.cellId]
-		const [y, x] = CELL_POSITIONS[destination]
-		const dCell = this.cells[destination]
+	attackVectors: T2DVector[] = [
+		// Влево
+		[this.vy, -1],
+		// Вправо
+		[this.vy, 1],
+	]
+
+	attackOptions: TPieceAttack[] = this.attackVectors.map((v) => ({
+		vector: v,
+		range: 1,
+	}))
+
+	computeValidMoves(): TValidMoves {
 		const vy = this.vy
+		const availableMoves: TPieceMoves = []
+		const availableAttacks: TPieceMoves = []
+		const potentialMoves: TPieceMoves = []
+		const potentialAttacks: TPieceMoves = []
+		const forward = this.vectorDestinations({ vector: [vy, 0], range: 2, punchThrough: 0 })
+		const left = this.vectorDestinations(this.attackOptions[0])
+		const right = this.vectorDestinations(this.attackOptions[1])
 
-		if (
-			// 1 клетку вперёд
-			(x === col && y === row + vy * 1 && dCell.isPassable) ||
-			( // 2 клетки вперёд
-				x === col && y === row + vy * 2 && this.isFirstMove &&
-				dCell.isPassable && this.cells[mkId(y - vy, x)].isPassable
-			) ||
-			// Съесть налево/направо
-			((x + 1 === col || x - 1 === col) && y === row + vy * 1 && dCell.isBeatable)
-		) return true
+		availableMoves.push(...forward.moves)
 
-		return false
+		potentialMoves.push(...forward.potentialMoves, left.moves[0], right.moves[0])
+
+		potentialAttacks.push(left.moves[0], right.moves[0])
+
+		if (left.obstacles[0]?.cell.isBeatable) {
+			availableMoves.push(left.moves[0])
+			availableAttacks.push(left.moves[0])
+		}
+		if (right.obstacles[0]?.cell.isBeatable) {
+			availableMoves.push(right.moves[0])
+			availableAttacks.push(right.moves[0])
+		}
+
+		return [availableMoves, availableAttacks, potentialMoves, potentialAttacks]
 	}
 
 	// todo Сделать превращение
+	// todo Взятие на проходе
 }
