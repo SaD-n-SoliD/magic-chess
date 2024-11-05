@@ -29,9 +29,9 @@ export class Pawn extends Piece {
 
 		availableMoves.push(...forward.moves)
 
-		potentialMoves.push(...forward.potentialMoves, left.moves[0], right.moves[0])
+		potentialMoves.push(...forward.potentialMoves, ...left.moves, ...right.moves)
 
-		potentialAttacks.push(left.moves[0], right.moves[0])
+		potentialAttacks.push(...left.moves, ...right.moves)
 
 		if (left.obstacles[0]?.cell.isBeatable) {
 			availableMoves.push(left.moves[0])
