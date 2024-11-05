@@ -19,6 +19,7 @@ type props = {
 
 export function ChessGame({ }: props) {
 	const {
+		currentMove,
 		cells,
 		availableMoves,
 		highlightedCells,
@@ -39,7 +40,7 @@ export function ChessGame({ }: props) {
 					isRight={i % 2 === 1}
 				/>
 			)}
-			gameMoveInfo={<GameMoveInfo />}
+			gameMoveInfo={<GameMoveInfo side={currentMove} />}
 			actions={
 				<>
 					<UiButton size="md" variant="primary">Ничья</UiButton>
