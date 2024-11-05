@@ -8,7 +8,7 @@ import { King } from "./pieces/king";
 export class GameField {
 	public cells: Cell[]
 	public setGameField: Function
-	public currentMove: TSide = MOVE_ORDER[0]
+	public moveCounter: number = 0
 	public selectedCellId?: TCellId | null
 	public highlightedCells: TCellFlags = []
 	public availableMoves: TCellFlags = []
@@ -39,6 +39,10 @@ export class GameField {
 		this.setGameField(Object.assign(newGameField, this))
 	}
 
+	getCurrentMove() {
+		return MOVE_ORDER[this.moveCounter % MOVE_ORDER.length]
+	}
+
 	handleCellClick(id: TCellId) {
 		// Если ячейка не была выделена до этого, выделяем её
 		if (!Number.isInteger(this.selectedCellId)) {
@@ -57,6 +61,7 @@ export class GameField {
 		else {
 			this.movePiece(id)
 			this.resetSelection()
+			this.moveCounter++
 		}
 
 		this.update()
@@ -84,8 +89,8 @@ export class GameField {
 		this.highlightedCells = [...INITIAL_HIGHLIGHTED_CELLS]
 	}
 
-	cellContainsAllyPiece(id: TCellId, allyPiece?: Piece) {
-		return this.cells[id].containsPieceOf(allyPiece?.side || this.currentMove)
+	cellContainsAllyPiece(id: TCellId) {
+		return this.cells[id].containsPieceOf(this.getCurrentMove())
 	}
 
 	getCellsByIds(idList: TCellId[]) {
@@ -146,7 +151,7 @@ export class GameField {
 
 			return moves.filter((cellId) => {
 				// Нельзя атаковать союзников
-				if (this.cellContainsAllyPiece(cellId, piece)) return false
+				if (piece.sideMatchesWith(cellId)) return false
 
 				return checkKingSafety(cellId)
 			})
@@ -190,7 +195,7 @@ export class GameField {
 					if (kvd.obstacles[0]?.id !== piece.cellId) return true
 
 					// Если второе препятствие - союзная фигура (тогда второе препятствие защитит{не будет нас атаковать}, если убрать нашу фигуру с первого)
-					if (kvd.obstacles[1]?.cell?.containsPieceOf(this.currentMove)) return true
+					if (kvd.obstacles[1]?.cell?.containsPieceOf(king.side)) return true
 
 					const secondObstaclePiece = kvd.obstacles[1]?.cell?.piece
 					const dangerousAttack = secondObstaclePiece?.attackOptions

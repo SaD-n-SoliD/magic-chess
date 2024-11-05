@@ -19,7 +19,7 @@ export function useGameState(_: params) {
 	}, [])
 
 	return {
-		currentMove: gameField?.currentMove,
+		currentMove: gameField?.getCurrentMove(),
 		cells: gameField?.cells || [],
 		availableMoves: gameField?.availableMoves || [],
 		highlightedCells: gameField?.highlightedCells || [],

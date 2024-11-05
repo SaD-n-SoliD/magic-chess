@@ -91,6 +91,12 @@ export abstract class Piece {
 		this.cellId = cellId
 	}
 
+	sideMatchesWith(cellId: TCellId) {
+		const targetPiece = this.cells[cellId].piece
+		if (!targetPiece) return false
+		return targetPiece.side === this.side
+	}
+
 	//* После внешних проверок
 	isValidMove(destination: TCellId) {
 		return this.availableMoveFlags[destination]
