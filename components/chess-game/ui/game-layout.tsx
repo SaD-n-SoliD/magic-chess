@@ -1,30 +1,26 @@
 import { CELL_SIZE, FIELD_LENGTH } from "../constants"
 
 type props = {
-	onBlur: React.FocusEventHandler
 	backLink: JSX.Element
 	title: JSX.Element
 	gameInfo: JSX.Element
 	playersList: React.ReactNode
 	gameMoveInfo: JSX.Element
 	actions: JSX.Element
-	gameCells: React.ReactNode
-	onClickGameField: React.MouseEventHandler
+	children: React.ReactNode
 }
 
 export function GameLayout({
-	onBlur,
 	backLink,
 	title,
 	gameInfo,
 	playersList,
 	gameMoveInfo,
 	actions,
-	gameCells,
-	onClickGameField,
+	children,
 }: props) {
 	return (
-		<div className="GameLayout pb-10" onBlur={onBlur}>
+		<div className="GameLayout pb-10">
 			<div className="pl-2">
 				{backLink}
 				{title}
@@ -42,13 +38,7 @@ export function GameLayout({
 					</div>
 					{actions}
 				</div>
-				<div
-					onClick={onClickGameField}
-					className="grid grid-cols-[--grid-rows] grid-rows-[--grid-rows] mt-3"
-					style={{ '--grid-rows': `repeat(${FIELD_LENGTH}, ${CELL_SIZE}px)` } as React.CSSProperties}
-				>
-					{gameCells}
-				</div>
+				{children}
 			</div>
 		</div>
 	)
