@@ -146,8 +146,8 @@ export class GameField {
 			debugger
 
 			const checkKingSafety = allyKing === piece ?
-				this.mkMoveChecks.isValidKingMove(allyKing) :
-				this.mkMoveChecks.kingRemainsSafe(piece, allyKing);
+				this.mkMoveValidator.isValidKingMove(allyKing) :
+				this.mkMoveValidator.kingRemainsSafe(piece, allyKing);
 
 			return moves.filter((cellId) => {
 				// Нельзя атаковать союзников
@@ -158,58 +158,56 @@ export class GameField {
 		})
 	}
 
-	get mkMoveChecks() {
-		return {
-			// Может ли король пойти на клетку destination? (true : false)
-			isValidKingMove: (king: King) => {
-				return (destination: TCellId) => {
-					for (const piece of this.pieces) {
-						// Союзные фигуры не станут атаковать короля
-						if (piece.side === king.side) continue
-						// Если поле под боем, туда нельзя ходить
-						if (piece.isPotentialAttack(destination)) return false
-					}
-					// Поле не под боем
-					return true
+	mkMoveValidator = {
+		// Может ли король пойти на клетку destination? (true : false)
+		isValidKingMove: (king: King) => {
+			return (destination: TCellId) => {
+				for (const piece of this.pieces) {
+					// Союзные фигуры не станут атаковать короля
+					if (piece.side === king.side) continue
+					// Если поле под боем, туда нельзя ходить
+					if (piece.isPotentialAttack(destination)) return false
 				}
-			},
+				// Поле не под боем
+				return true
+			}
+		},
 
-			// Останется ли король в безопасности после хода союзной фигуры? (true : false)
-			kingRemainsSafe: (piece: Piece, king: King) => {
-				const [y, x] = getCellPosition(piece.cellId)
-				const [ky, kx] = getCellPosition(king.cellId)
-				const shortedKingVector = simplifyFraction([y - ky, x - kx])
-				const dOptions = { vector: shortedKingVector, range: Infinity, punchThrough: 2 }
-				const kvd = king.vectorDestinations(dOptions)
+		// Останется ли король в безопасности после хода союзной фигуры? (true : false)
+		kingRemainsSafe: (piece: Piece, king: King) => {
+			const [y, x] = getCellPosition(piece.cellId)
+			const [ky, kx] = getCellPosition(king.cellId)
+			const shortedKingVector = simplifyFraction([y - ky, x - kx])
+			const dOptions = { vector: shortedKingVector, range: Infinity, punchThrough: 2 }
+			const kvd = king.vectorDestinations(dOptions)
 
-				return (destination: TCellId) => {
-					debugger
+			return (destination: TCellId) => {
+				debugger
 
-					const [dy, dx] = getCellPosition(destination)
-					const isKingVectorChanged = !vectorsAreCodirectional(shortedKingVector, [dy - ky, dx - kx])
-					// ПРИМЕЧАНИЕ: Работает, пока фигуры не могут перепрыгивать через препятствия вдоль своего вектора (Конь не может, он перепрыгивает не пункты своего вектора)
-					// Если вектор от короля не изменился, фигура всё ещё прикрывает короля со своего направления
-					if (!isKingVectorChanged) return true
+				const [dy, dx] = getCellPosition(destination)
+				const isKingVectorChanged = !vectorsAreCodirectional(shortedKingVector, [dy - ky, dx - kx])
+				// ПРИМЕЧАНИЕ: Работает, пока фигуры не могут перепрыгивать через препятствия вдоль своего вектора (Конь не может, он перепрыгивает не пункты своего вектора)
+				// Если вектор от короля не изменился, фигура всё ещё прикрывает короля со своего направления
+				if (!isKingVectorChanged) return true
 
-					// Если текущая фигура - не первое препятствие на пути к королю, то первое в любом случае защитит короля
-					if (kvd.obstacles[0]?.id !== piece.cellId) return true
+				// Если текущая фигура - не первое препятствие на пути к королю, то первое в любом случае защитит короля
+				if (kvd.obstacles[0]?.id !== piece.cellId) return true
 
-					// Если второе препятствие - союзная фигура (тогда второе препятствие защитит{не будет нас атаковать}, если убрать нашу фигуру с первого)
-					if (kvd.obstacles[1]?.cell?.containsPieceOf(king.side)) return true
+				// Если второе препятствие - союзная фигура (тогда второе препятствие защитит{не будет нас атаковать}, если убрать нашу фигуру с первого)
+				if (kvd.obstacles[1]?.cell?.containsPieceOf(king.side)) return true
 
-					const secondObstaclePiece = kvd.obstacles[1]?.cell?.piece
-					const dangerousAttack = secondObstaclePiece?.attackOptions
-						?.find((a) => isEqual(shortedKingVector, reverseVector(a.vector)))
-					// Если второе препятствие (фигура) от короля вдоль вектора не способна атаковать вдоль данного вектора, то король король будет в безопасности после хода
-					if (!dangerousAttack) return true
+				const secondObstaclePiece = kvd.obstacles[1]?.cell?.piece
+				const dangerousAttack = secondObstaclePiece?.attackOptions
+					?.find((a) => isEqual(shortedKingVector, reverseVector(a.vector)))
+				// Если второе препятствие (фигура) от короля вдоль вектора не способна атаковать вдоль данного вектора, то король король будет в безопасности после хода
+				if (!dangerousAttack) return true
 
-					const pseudoAttack = { ...dangerousAttack, punchThrough: 2 }
-					const pseudoTarget = secondObstaclePiece?.vectorDestinations(pseudoAttack).obstacles[1]?.cell?.piece
+				const pseudoAttack = { ...dangerousAttack, punchThrough: 2 }
+				const pseudoTarget = secondObstaclePiece?.vectorDestinations(pseudoAttack).obstacles[1]?.cell?.piece
 
-					// Если второе препятствие (вражеская фигура) способна атаковать в данном направлении, но не достаёт до короля (даже если убрать текущую фигуру) 
-					// true : false
-					return (pseudoTarget !== king)
-				}
+				// Если второе препятствие (вражеская фигура) способна атаковать в данном направлении, но не достаёт до короля (даже если убрать текущую фигуру) 
+				// true : false
+				return (pseudoTarget !== king)
 			}
 		}
 	}
