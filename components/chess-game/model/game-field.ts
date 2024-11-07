@@ -1,6 +1,6 @@
 import { isEqual } from "lodash-es";
 import { FIELD_LENGTH, INITIAL_HIGHLIGHTED_CELLS, MOVE_ORDER, PIECES, TCellId, TSide } from "../constants";
-import { getCellPosition, reverseVector, simplifyFraction, TCellFlags, vectorsAreCodirectional } from "../utils";
+import { getCellPosition, pointBelongsToLineSegment, reverseVector, simplifyFraction, TCellFlags, vectorsAreCodirectional } from "../utils";
 import { Cell } from "./cell";
 import { Piece, TVectorDestinationOptions } from "./piece";
 import { King } from "./pieces/king";
@@ -15,6 +15,14 @@ export class GameField {
 	public pieces: Piece[] = []
 	public deadPieces: Piece[] = []
 	public kings: King[] = []
+	public isCheck: boolean = false
+	public isDoubleCheck: boolean = false
+	public isCheckmate: boolean = false
+	public checkDetails?: {
+		king: King
+		attacker: Piece
+		validMoveExists?: boolean
+	}
 
 	constructor(cells: Cell[], setGameField: Function) {
 		this.cells = cells
@@ -53,7 +61,7 @@ export class GameField {
 			this.resetSelection()
 		}
 		// При потытке сделать невозможный ход выделяем новую ячейку
-		else if (!this.availableMoves[id]) {
+		else if (!this.availableMoves[id] || this.isCheckmate) {
 			this.resetSelection()
 			this.selectCell(id)
 		}
@@ -62,6 +70,9 @@ export class GameField {
 			this.movePiece(id)
 			this.resetSelection()
 			this.moveCounter++
+			// Если объявлен шах и нет безопасных ходов, то объявляем мат
+			if (this.isCheck && !this.checkDetails?.validMoveExists)
+				this.checkmate()
 		}
 
 		this.update()
@@ -76,7 +87,11 @@ export class GameField {
 	setAvailableMoves(id: TCellId) {
 		const piece = this.cells[id].piece
 		if (!piece) return
-		this.availableMoves = piece.availableMoveFlags
+		const blockMoves = this.isDoubleCheck && !(piece instanceof King)
+
+		this.availableMoves = blockMoves ?
+			piece.availableMoveFlags.map(_ => false) :
+			piece.availableMoveFlags;
 	}
 
 	resetSelection() {
@@ -121,11 +136,47 @@ export class GameField {
 		cell.piece = null
 	}
 
+	clearCheck() {
+		this.isCheck = this.isDoubleCheck = false
+		delete this.checkDetails
+	}
+
+	checkmate() {
+		this.isCheckmate = true
+	}
+
+	// Шах, двойной шах
+	setSpecialGameStates() {
+		for (const king of this.kings) {
+			const attackers = this.mkMoveValidator.findCellAttackers(king.side)(king.cellId)
+
+			if (attackers.length > 1)
+				this.isDoubleCheck = true
+
+			if (attackers.length) {
+				this.isCheck = true
+				this.checkDetails = { king, attacker: attackers[0] }
+				break
+			}
+		}
+	}
+
 	// Обновляет доступные ходы всех фигур
 	updateValidMoves() {
+		this.clearCheck()
+
 		for (const cPiece of this.pieces) {
 			this.updatePieceValidMoves(cPiece)
 		}
+
+		this.setSpecialGameStates()
+		// Если шах, пересчитываем ходы. Если двойной шах, нет смысла пересчитывать
+		if (this.isCheck && !this.isDoubleCheck) {
+			for (const cPiece of this.pieces) {
+				this.updatePieceValidMoves(cPiece)
+			}
+		}
+
 		// Ходы королей должны обновляться исключительно после всех остальных
 		for (const king of this.kings) {
 			this.updatePieceValidMoves(king)
@@ -165,7 +216,6 @@ export class GameField {
 		}
 	}
 
-	// todo Ходы под шахом 
 	updatePieceValidMoves(piece: Piece) {
 		piece.updateValidMoves((moves) => {
 			const allyKing = this.kings.find(k => k.side === piece.side)
@@ -173,33 +223,74 @@ export class GameField {
 			// debugger
 
 			const checkKingSafety = allyKing === piece ?
-				this.mkMoveValidator.isValidKingMove(allyKing) :
+				this.mkMoveValidator.isSafeCell(allyKing.side) :
 				this.mkMoveValidator.kingRemainsSafe(piece, allyKing);
 
-			return moves.filter((cellId) => {
+			const moveDefendsKing = allyKing === piece ?
+				() => true :
+				this.mkMoveValidator.moveDefendsKing();
+
+			const newMoves = moves.filter((cellId) => {
 				// Нельзя атаковать союзников
 				if (piece.sideMatchesWith(cellId)) return false
 
+				if (this.isCheck)
+					return checkKingSafety(cellId) && moveDefendsKing(cellId)
+
 				return checkKingSafety(cellId)
 			})
+
+			const d = this.checkDetails
+			// Если объявлен шах и нашёлся возможный ход
+			if (d && piece.side === d.king.side && newMoves.length)
+				d.validMoveExists = true
+
+			return newMoves
 		})
 	}
 
 	//* Если mkMoveValidator сделать свойством, ссылка this.pieces указывает на старый массив!!! (видимо дело было в сохранении старой сслыки и смене ссылки на массив)
 	get mkMoveValidator() {
 		return {
-			// Может ли король пойти на клетку destination? (true : false)
-			isValidKingMove: (king: King) => {
+			// Безопасная клетка? (true : false)
+			isSafeCell: (allySide: TSide) => {
 				return (destination: TCellId) => {
 					debugger
 					for (const piece of this.pieces) {
-						// Союзные фигуры не станут атаковать короля
-						if (piece.side === king.side) continue
-						// Если поле под боем, туда нельзя ходить
-						if (piece.isPotentialAttack(destination)) return false
+						// Союзные фигуры не учитываем
+						if (piece.side === allySide) continue
+						// Поле под боем
+						if (piece.potentiallyAttacks(destination)) return false
 					}
 					// Поле не под боем
 					return true
+				}
+			},
+
+			// Находит все не союзные фигуры, которые могут атаковать данную клетку
+			findCellAttackers: (allySide: TSide) => {
+				return (destination: TCellId) => {
+					debugger
+					const attackers = []
+					for (const piece of this.pieces) {
+						// Союзные фигуры не учитываем
+						if (piece.side === allySide) continue
+						// Поле под боем
+						if (piece.potentiallyAttacks(destination)) attackers.push(piece)
+					}
+					return attackers
+				}
+			},
+
+			// Защитит ли короля текущий ход? (true : false)
+			moveDefendsKing: () => {
+				if (!this.checkDetails) return () => true
+				const { attacker, king } = this.checkDetails
+				const [a, b] = [attacker.cellId, king.cellId].map(getCellPosition)
+
+				return (destination: TCellId) => {
+					const p = getCellPosition(destination)
+					return pointBelongsToLineSegment(a, b, p)
 				}
 			},
 

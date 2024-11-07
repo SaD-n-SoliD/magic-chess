@@ -110,7 +110,7 @@ export abstract class Piece {
 		return this.potentialMoves.includes(destination)
 	}
 
-	isPotentialAttack(destination: TCellId) {
+	potentiallyAttacks(destination: TCellId) {
 		return this.potentialAttacks.includes(destination)
 	}
 	// todo Сделать понятное разграничение на до/после внешних проверок. Выяснить, что из этого действительно нужно

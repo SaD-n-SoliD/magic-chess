@@ -24,6 +24,8 @@ export function ChessGame({ }: props) {
 		cells,
 		availableMoves,
 		highlightedCells,
+		isCheck,
+		isCheckmate,
 		onClickGameField,
 		onBlur,
 	} = useGameState(null)
@@ -40,7 +42,12 @@ export function ChessGame({ }: props) {
 					isRight={i % 2 === 1}
 				/>
 			)}
-			gameMoveInfo={<GameMoveInfo side={currentMove} />}
+			gameMoveInfo={
+				<>
+					<GameMoveInfo side={currentMove} />
+					{isCheckmate && <div className="text-red-600">Объявлен мат!</div>}
+				</>
+			}
 			actions={
 				<>
 					<UiButton size="md" variant="primary">Ничья</UiButton>

@@ -23,6 +23,8 @@ export function useGameState(_: params) {
 		cells: gameField?.cells || [],
 		availableMoves: gameField?.availableMoves || [],
 		highlightedCells: gameField?.highlightedCells || [],
+		isCheck: gameField?.isCheck,
+		isCheckmate: gameField?.isCheckmate,
 		onClickGameField,
 		onBlur,
 	} as const

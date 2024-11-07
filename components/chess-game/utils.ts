@@ -1,3 +1,4 @@
+import { isEqual } from "lodash-es";
 import { FIELD_LENGTH, FIELD_SIZE, TCellId, TCol, TRow } from "./constants";
 
 const CELL_POSITIONS =
@@ -43,7 +44,7 @@ function areFloatsEqual(a: number, b: number, epsilon = Number.EPSILON) {
 // Проверка на сонаправленность векторов
 export function vectorsAreCodirectional(v1: TVector, v2: TVector) {
 	const directionCount = Math.max(v1.length, v2.length)
-	let k
+	let k = 0
 	for (let i = 0; i < directionCount; i++) {
 		// Если в текущем направлении один вектор смещается, а другой нет, то векторы не сонаправлены
 		if (!v1[i] !== !v2[i]) return false
@@ -56,7 +57,8 @@ export function vectorsAreCodirectional(v1: TVector, v2: TVector) {
 		else if (!areFloatsEqual(k, v1[i] / v2[i]))
 			return false
 	}
-	return true
+	// k > 0 означает сонаправленность
+	return k > 0
 }
 
 // Разморот вектора на 180 градусов
@@ -75,3 +77,34 @@ export function simplifyFraction([numerator, denominator]: number[]): [number, n
 	return [Math.round(numerator / divisor), Math.round(denominator / divisor)]
 }
 
+export type T2DPoint = [number, number]
+
+class Point {
+	public x
+	public y
+	constructor([x, y]: [number, number]) {
+		this.x = x
+		this.y = y
+	}
+}
+
+// Проверка: точка P принадлежит отрезку AB (края отрезка подходят)
+export function pointBelongsToLineSegment(a: T2DPoint, b: T2DPoint, p: T2DPoint): boolean {
+	const A = new Point(a)
+	const B = new Point(b)
+	const P = new Point(p)
+
+	const AB = [B.x - A.x, B.y - A.y]
+	const AP = [P.x - A.x, P.y - A.y]
+	const BP = [P.x - B.x, P.y - B.y]
+	const BA = reverseVector(AB)
+
+	return (
+		isEqual(a, p) ||
+		isEqual(b, p) ||
+		(
+			vectorsAreCodirectional(AP, AB) &&
+			vectorsAreCodirectional(BP, BA)
+		)
+	)
+}
