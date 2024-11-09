@@ -60,6 +60,7 @@ export class GameField {
 		else if (this.selectedCellId === id) {
 			this.resetSelection()
 		}
+		// todo Проверка на isGameFinished вместо isCheckmate
 		// При потытке сделать невозможный ход выделяем новую ячейку
 		else if (!this.availableMoves[id] || this.isCheckmate) {
 			this.resetSelection()
@@ -70,6 +71,7 @@ export class GameField {
 			this.movePiece(id)
 			this.resetSelection()
 			this.moveCounter++
+			// todo Метод finish, который завершает игру (с исходами win: player.side, draw)
 			// Если объявлен шах и нет безопасных ходов, то объявляем мат
 			if (this.isCheck && !this.checkDetails?.validMoveExists)
 				this.checkmate()
@@ -108,12 +110,8 @@ export class GameField {
 		return this.cells[id].containsPieceOf(this.getCurrentMove())
 	}
 
-	getCellsByIds(idList: TCellId[]) {
-		return idList.map(id => this.cells[id])
-	}
-
 	movePiece(destination: TCellId, origin = this.selectedCellId as TCellId) {
-		const [cell, dCell] = this.getCellsByIds([origin, destination])
+		const [cell, dCell] = [origin, destination].map(id => this.cells[id])
 		if (!cell?.piece) return
 
 		// Перестановка фигуры
@@ -216,6 +214,9 @@ export class GameField {
 		}
 	}
 
+	// todo Ничья в случае повторения позиции 3 раза
+	// todo Пат
+	// todo Ничья в случае 50 ходов без взятий и ходов пешек
 	updatePieceValidMoves(piece: Piece) {
 		piece.updateValidMoves((moves) => {
 			const allyKing = this.kings.find(k => k.side === piece.side)
