@@ -7,7 +7,7 @@ import { King } from "./pieces/king";
 
 export class GameField {
 	public cells: Cell[]
-	public setGameField: Function
+	public update: Function
 	public moveCounter: number = 0
 	public selectedCellId?: TCellId | null
 	public highlightedCells: TCellFlags = []
@@ -24,30 +24,24 @@ export class GameField {
 		validMoveExists?: boolean
 	}
 
-	constructor(cells: Cell[], setGameField: Function) {
+	constructor(cells: Cell[], update: Function) {
 		this.cells = cells
-		this.setGameField = setGameField
-	}
-
-	init() {
+		this.update = update
 		this.resetHighlighting()
+
 		for (const cell of this.cells) {
 			if (!cell.piece) continue
 			cell.piece.saveCells(this.cells)
 			this.pieces.push(cell.piece)
 			if (cell.piece instanceof King) this.kings.push(cell.piece)
 		}
+
 		for (const piece of this.pieces) {
 			this.updatePieceValidMoves(piece)
 		}
 	}
 
-	update() {
-		const newGameField = new GameField(this.cells, this.setGameField)
-		this.setGameField(Object.assign(newGameField, this))
-	}
-
-	getCurrentMove() {
+	get currentMove() {
 		return MOVE_ORDER[this.moveCounter % MOVE_ORDER.length]
 	}
 
@@ -107,7 +101,7 @@ export class GameField {
 	}
 
 	cellContainsAllyPiece(id: TCellId) {
-		return this.cells[id].containsPieceOf(this.getCurrentMove())
+		return this.cells[id].containsPieceOf(this.currentMove)
 	}
 
 	movePiece(destination: TCellId, origin = this.selectedCellId as TCellId) {

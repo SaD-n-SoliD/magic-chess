@@ -3,46 +3,62 @@ import { INITIAL_CELLS, INITIAL_HIGHLIGHTED_CELLS, MOVE_ORDER, SIDES, TCellId, T
 import { GameField } from "./game-field"
 
 
-type params = null | {
+type params = null | {}
 
+type TGameState = {
+	gameField: GameField
 }
 
 export function useGameState(_: params) {
 
-	const [gameField, setGameField] = useState<GameField>()
+	const [gameState, setGameState] = useState<TGameState>(initGameState)
+	const { gameField } = gameState
 
-	// Инициализация и установка игрового поля
-	useEffect(() => {
-		const gameField = new GameField(INITIAL_CELLS, setGameField)
-		gameField.init()
-		setGameField(gameField)
-	}, [])
+	// Загружаем и устанавливаем данные с сервера
+	// useEffect(() => {
+	// 	const newState = ..
+	// 	setGameState(newState)
+	// }, [])
+
+	const { currentMove, cells, availableMoves, highlightedCells, isCheck, isCheckmate } = gameField
 
 	return {
-		currentMove: gameField?.getCurrentMove(),
-		cells: gameField?.cells || [],
-		availableMoves: gameField?.availableMoves || [],
-		highlightedCells: gameField?.highlightedCells || [],
-		isCheck: gameField?.isCheck,
-		isCheckmate: gameField?.isCheckmate,
+		currentMove,
+		cells,
+		availableMoves,
+		highlightedCells,
+		isCheck,
+		isCheckmate,
 		onClickGameField,
 		onBlur,
 	} as const
 
+
+	function initGameState() {
+		return ({
+			gameField: new GameField(INITIAL_CELLS, refreshGameState)
+		})
+	}
+
+	function refreshGameState() {
+		setGameState(state => ({ ...state }))
+	}
 
 	function onClickGameField(e: React.MouseEvent) {
 		if (!(e.target instanceof HTMLElement)) return
 		const cellId = Number((e.target.closest('.GameCell') as HTMLElement)?.dataset?.id) as TCellId
 		if (Number.isNaN(cellId)) return
 
-		gameField?.handleCellClick(cellId)
+		gameField.handleCellClick(cellId)
 	}
 
-	// todo Включить
 	function onBlur(e: React.FocusEvent) {
-		// if (e.currentTarget.contains(e.relatedTarget)) return
-		// gameField?.resetSelection()
-		// gameField?.update()
+		// В dev моде эта функция мешает, т.к. при открытии chrome dev tools фокус пропадает с поля
+		if (process.env.NODE_ENV === 'development') return
+
+		if (e.currentTarget.contains(e.relatedTarget)) return
+		gameField.resetSelection()
+		gameField.update()
 	}
 }
 
