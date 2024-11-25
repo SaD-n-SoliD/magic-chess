@@ -13,6 +13,9 @@ const config: Config = {
 				"gradient-conic":
 					"conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
 			},
+			fontFamily: {
+				'chess-glyph': ['var(--icon-font-chess)']
+			},
 			lineHeight: {
 				tight: '1.2'
 			},
