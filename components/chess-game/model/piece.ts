@@ -70,7 +70,7 @@ export abstract class Piece {
 	public availableMoveFlags: TCellFlags = []
 	abstract attackOptions: TPieceAttack[]
 	// todo Разделить вычисление атак и ходов
-	// returns: [validMoves, potentialMoves]
+	// returns: [availableMoves, availableAttacks, potentialMoves, potentialAttacks]
 	//* Получение potentialMoves из vectorDestinations().potentialMoves позволит нормально обновлять ранее перекрытые ходы фигур, которые не могут есть в направлении перекрытия
 	abstract computeValidMoves(): TValidMoves
 
