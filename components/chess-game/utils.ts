@@ -1,5 +1,7 @@
 import { isEqual } from "lodash-es";
 import { FIELD_LENGTH, FIELD_SIZE, TCellId, TCol, TRow } from "./constants";
+import { Piece, TPiece } from "./model/piece";
+import { PIECE_CONSTRUCTORS } from "./model/constants/piece-constructors";
 
 const CELL_POSITIONS =
 	new Array(FIELD_SIZE)
@@ -15,10 +17,17 @@ export function mkCellId(row: TRow, col: TCol) {
 
 // id -> [row, col] 
 // id -> [y, x]
-export function getCellPosition(id: TCellId) {
-	return CELL_POSITIONS[id]
+export function getCellPosition(id: TCellId): [number, number] & { x: number, y: number } {
+	const res = Object.create(CELL_POSITIONS[id])
+	res.y = res[0]
+	res.x = res[1]
+	return res
 }
 
+export function mkPiece(data: TPiece, cellId: TCellId): Piece {
+	const Piece = PIECE_CONSTRUCTORS[data.type]
+	return new Piece(data, cellId)
+}
 
 export type TCellFlags = boolean[]; // { [key: TCellId]: boolean }
 

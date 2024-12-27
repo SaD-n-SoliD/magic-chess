@@ -87,40 +87,6 @@ export const INITIAL_POSITIONS: Record<TSide, TPiecePositions> = {
 	white: INITIAL_WHITE_POSITIONS,
 }
 
-const ctx = require.context('./model/pieces', false)
-const pieceModules = ctx.keys().map(piece => ctx(piece));
-
-export const INITIAL_CELLS = (() => {
-	let CELLS = new Array(FIELD_SIZE)
-		.fill(null)
-		.map((_, id) => new Cell({
-			id,
-			piece: null,
-			object: null,
-		}))
-
-	const mkPiece = (data: TPiece, cellId: TCellId) => {
-		const cClass = capitalize(data.type)
-		const Piece = pieceModules.find(module => module[cClass])[cClass]
-		return new Piece(data, cellId)
-	}
-
-	for (const [side, sidePositions] of Object.entries(INITIAL_POSITIONS)) {
-		for (const [index, pieceType] of Object.entries(sidePositions)) {
-			Object.assign(CELLS[+index], {
-				piece: mkPiece({
-					side: side as TSide,
-					type: pieceType
-				}, +index),
-			})
-		}
-	}
-
-	return CELLS
-})()
-
-export const INITIAL_HIGHLIGHTED_CELLS = INITIAL_CELLS.map(_ => false)
-
 
 
 
