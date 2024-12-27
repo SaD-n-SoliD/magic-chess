@@ -13,6 +13,8 @@ import { PLAYERS } from "./constants"
 import { PieceImage } from "./ui/images/piece-image"
 import { useGameState } from "./model/use-game-state"
 import { GameField } from "./ui/game-field"
+import { Dropdown } from "./ui/dropdown"
+import { CellMenu } from "./ui/game-modal"
 
 type props = {
 
@@ -26,7 +28,9 @@ export function ChessGame({ }: props) {
 		highlightedCells,
 		isCheck,
 		isCheckmate,
+		activeModal,
 		onClickGameField,
+		closeGameModal,
 		onBlur,
 	} = useGameState(null)
 
@@ -73,6 +77,17 @@ export function ChessGame({ }: props) {
 								side={cell.piece.side}
 								className="z-10 cursor-pointer"
 							/>
+						}
+						{
+							activeModal?.owner === 'cell' &&
+							activeModal.targetCell.id === i &&
+							(
+								<CellMenu
+									currentMove={currentMove}
+									data={activeModal}
+									onClose={closeGameModal}>
+								</CellMenu>
+							)
 						}
 					</GameCell>
 				)}

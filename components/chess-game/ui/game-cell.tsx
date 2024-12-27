@@ -1,5 +1,5 @@
 import clsx from "clsx"
-import { COL_LABELS, FIELD_LENGTH, ROW_LABELS, TCellId } from "../constants"
+import { COL_LABELS, CSSClassNames, FIELD_LENGTH, ROW_LABELS, TCellId } from "../constants"
 import { getCellPosition } from "../utils"
 
 type props = {
@@ -13,14 +13,18 @@ type props = {
 export function GameCell({ index, isAvailableToMove, isHighlighted, containsPiece, children }: props) {
 	const [row, col] = getCellPosition(index)
 
+	// todo Рефакторинг (слишком много непонятных absolute элементов)
 	return (
-		<button
+		<div
+			role="button"
+			tabIndex={0}
 			data-id={index}
 			className={clsx(
+				CSSClassNames.gameCell,
+				"flex items-center justify-center relative cursor-default",
 				(row + col) % 2 ?
 					'bg-board-dark text-board-light' :
 					'bg-board-light text-board-dark',
-				"GameCell flex items-center justify-center relative cursor-default"
 			)}
 		>
 			{children}
@@ -52,7 +56,7 @@ export function GameCell({ index, isAvailableToMove, isHighlighted, containsPiec
 					<div className="w-full h-full [border-width:7px] border-solid border-board-hint rounded-full"></div>
 				</div>
 			}
-		</button>
+		</div>
 	)
 }
 
