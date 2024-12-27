@@ -71,7 +71,22 @@ export class GameField {
 				this.checkmate()
 		}
 
-		this.update()
+	// Задачу преобразования фигур и переноса нужных свойств невозможно решить в общем виде, поэтому переносим и вычисляем эти свойства вручную.
+	// Преобразования бывают разные, поэтому их обработку можно делегировать внешним функциям. в options будем передавать информацию, необходимую для этого (например, тип преобразования).
+	pieceTransform(piece: Piece, newProps: Partial<Piece>, options?: {}) {
+		if (!piece) throw new Error("Ошибка превращения: фигура отсутствует");
+		// Текущее преобразование - смена типа фигуры
+		if (newProps.type) {
+			const newPieceData = {
+				type: newProps.type,
+				side: piece.side,
+			}
+			const newPiece = mkPiece(newPieceData, piece.cellId)
+			newPiece.saveCells(this.cells)
+			const index = this.pieces.findIndex((p) => p === piece)
+
+			this.pieces[index] = this.cells[piece.cellId].piece = newPiece
+		}
 	}
 
 	selectCell(id: TCellId) {
