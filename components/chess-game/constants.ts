@@ -2,9 +2,13 @@ import { StaticImageData } from "next/image";
 import avatarSrc1 from "./ui/images/avatar.png";
 import avatarSrc2 from "./ui/images/avatar2.png";
 import { ValueOf } from "next/dist/shared/lib/constants";
-import { Cell, TCell } from "./model/cell";
-import { Piece, TPiece } from "./model/piece";
-import { capitalize } from "@/utils/capitalize";
+import { TUnitVector } from "./utils";
+
+export enum CSSClassNames {
+	gameField = 'GameField',
+	gameCell = 'GameCell',
+	gameModal = 'GameModal',
+}
 
 // px
 export const CELL_SIZE = 75
@@ -38,6 +42,24 @@ export const PIECES = {
 	rook: 'rook',
 	queen: 'queen',
 	king: 'king',
+} as const
+
+type TSideInfo = {
+	vy: TUnitVector
+	yStart: TRow,
+	yEnd: TRow
+}
+export const SIDE_INFO: Record<TSide, TSideInfo> = {
+	black: {
+		vy: 1,
+		yStart: 0,
+		yEnd: FIELD_HEIGHT - 1
+	},
+	white: {
+		vy: -1,
+		yStart: FIELD_HEIGHT - 1,
+		yEnd: 0
+	},
 } as const
 
 export type TPlayerInfo = {
