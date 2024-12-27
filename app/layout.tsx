@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "@/public/fonts"
 import "./null.css";
 import "./globals.css";
 import clsx from "clsx";
 import { Providers } from "./providers";
-// import { chessGlyph } from "@/public/fonts";
+import { chessGlyph } from "@/public/fonts";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -21,7 +20,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="ru">
-			<body className={clsx(inter.className, 'text-slate-900')}>{children}</body>
+			<body className={clsx(inter.className, chessGlyph.variable, 'text-slate-900')}>
+				<Providers>{children}</Providers>
+			</body>
 		</html>
 	);
 }
