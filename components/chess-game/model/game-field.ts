@@ -1,13 +1,20 @@
 import { isEqual } from "lodash-es";
-import { FIELD_LENGTH, INITIAL_HIGHLIGHTED_CELLS, MOVE_ORDER, PIECES, TCellId, TSide } from "../constants";
-import { getCellPosition, pointBelongsToLineSegment, reverseVector, simplifyFraction, TCellFlags, vectorsAreCodirectional } from "../utils";
+import { FIELD_LENGTH, MOVE_ORDER, PIECES, TCellId, TPieceType, TSide } from "../constants";
+import { getCellPosition, mkPiece, pointBelongsToLineSegment, reverseVector, simplifyFraction, TCellFlags, vectorsAreCodirectional } from "../utils";
 import { Cell } from "./cell";
-import { Piece, TVectorDestinationOptions } from "./piece";
+import { Piece } from "./piece";
 import { King } from "./pieces/king";
+import { MOVE_CONFIRMATIONS } from './constants/move-confirmations';
+import { INITIAL_HIGHLIGHTED_CELLS } from "./constants/initial-cells";
+import { openModal } from "@/store/chess-game/game-modal-slice";
+import { TAppDispatch, TRootState } from "@/store";
+import { CellMenu } from "./menu";
 
 export class GameField {
 	public cells: Cell[]
 	public update: Function
+	public dispatch: TAppDispatch
+	public activeMenu: CellMenu | null
 	public moveCounter: number = 0
 	public selectedCellId?: TCellId | null
 	public highlightedCells: TCellFlags = []
@@ -24,9 +31,11 @@ export class GameField {
 		validMoveExists?: boolean
 	}
 
-	constructor(cells: Cell[], update: Function) {
+	constructor(cells: Cell[], update: Function, dispatch: TAppDispatch, activeMenu: CellMenu | null) {
 		this.cells = cells
 		this.update = update
+		this.dispatch = dispatch
+		this.activeMenu = activeMenu
 		this.resetHighlighting()
 
 		for (const cell of this.cells) {
@@ -60,16 +69,48 @@ export class GameField {
 			this.resetSelection()
 			this.selectCell(id)
 		}
-		// Если ход возможен, делаем его
+		// Если ход возможен
 		else {
-			this.movePiece(id)
-			this.resetSelection()
-			this.moveCounter++
-			// todo Метод finish, который завершает игру (с исходами win: player.side, draw)
-			// Если объявлен шах и нет безопасных ходов, то объявляем мат
-			if (this.isCheck && !this.checkDetails?.validMoveExists)
-				this.checkmate()
+			const conf = this.getConfirmationToRequire(id)
+			// Если подтверждение не нужно, ходим
+			if (!conf) {
+				this.makeMove(id)
+			}
+			// Если нужно подтверждение хода, показываем нужную модалку (обновляя состояние)
+			else {
+				// [targetCell, originCell]
+				const c2 = [id, this.selectedCellId as TCellId].map(id => this.cells[id]) as [Cell, Cell]
+				this.dispatch(openModal(CellMenu.create(conf.menuData, ...c2)))
+			}
 		}
+
+		this.update()
+	}
+
+	// Сейчас за раз вылезет только одно меню
+	getConfirmationToRequire(destination: TCellId, origin = this.selectedCellId as TCellId) {
+		const piece = this.cells[origin].piece as Piece
+		for (const conf of MOVE_CONFIRMATIONS[piece.type]) {
+			if (conf.checkConditions(this, destination)) return conf
+		}
+	}
+
+	// confirmMove() {
+	// 	const menu = this.activeMenu.instance
+	// 	if (!menu) return
+
+	// 	// const 
+	// }
+
+	makeMove(destination: TCellId, origin = this.selectedCellId as TCellId) {
+		this.movePiece(destination, origin)
+		this.resetSelection()
+		this.moveCounter++
+		// todo Метод finish, который завершает игру (с исходами win: player.side, draw)
+		// Если объявлен шах и нет безопасных ходов, то объявляем мат
+		if (this.isCheck && !this.checkDetails?.validMoveExists)
+			this.checkmate()
+	}
 
 	// Задачу преобразования фигур и переноса нужных свойств невозможно решить в общем виде, поэтому переносим и вычисляем эти свойства вручную.
 	// Преобразования бывают разные, поэтому их обработку можно делегировать внешним функциям. в options будем передавать информацию, необходимую для этого (например, тип преобразования).
@@ -265,7 +306,7 @@ export class GameField {
 			// Безопасная клетка? (true : false)
 			isSafeCell: (allySide: TSide) => {
 				return (destination: TCellId) => {
-					debugger
+					// debugger
 					for (const piece of this.pieces) {
 						// Союзные фигуры не учитываем
 						if (piece.side === allySide) continue
@@ -280,7 +321,7 @@ export class GameField {
 			// Находит все не союзные фигуры, которые могут атаковать данную клетку
 			findCellAttackers: (allySide: TSide) => {
 				return (destination: TCellId) => {
-					debugger
+					// debugger
 					const attackers = []
 					for (const piece of this.pieces) {
 						// Союзные фигуры не учитываем
@@ -313,7 +354,7 @@ export class GameField {
 				const kvd = king.vectorDestinations(dOptions)
 
 				return (destination: TCellId) => {
-					debugger
+					// debugger
 
 					const [dy, dx] = getCellPosition(destination)
 					const isKingVectorChanged = !vectorsAreCodirectional(shortedKingVector, [dy - ky, dx - kx])

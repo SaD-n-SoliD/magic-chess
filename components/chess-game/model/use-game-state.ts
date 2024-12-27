@@ -1,18 +1,28 @@
 import { useEffect, useState } from "react"
-import { INITIAL_CELLS, INITIAL_HIGHLIGHTED_CELLS, MOVE_ORDER, SIDES, TCellId, TSide } from "../constants"
+import { CSSClassNames, TCellId, TSide } from "../constants"
 import { GameField } from "./game-field"
-
+import { INITIAL_CELLS } from "./constants/initial-cells"
+import { useDispatch, useSelector } from "react-redux"
+import { TRootState } from "@/store"
+import { closeModal, getModalInstance } from "@/store/chess-game/game-modal-slice"
+import { TMenuType, TMenuConfigsByType } from "./constants/menu-configs"
 
 type params = null | {}
 
-type TGameState = {
-	gameField: GameField
-}
-
 export function useGameState(_: params) {
 
-	const [gameState, setGameState] = useState<TGameState>(initGameState)
+	const dispatch = useDispatch()
+	// Нельзя хранить экземпляры класса в сторе. Поэтому подопрём всё это костылём.
+	// Подписываемся на изменение состояния и получаем экземпляр модалки
+	const flattedActiveModal = useSelector((state: TRootState) => state.gameModal.sInstance)
+	const activeModal = getModalInstance()
+
+	const [gameState, setGameState] = useState(initGameState)
 	const { gameField } = gameState
+
+	gameField.activeMenu = activeModal
+
+	// console.log('-'.repeat(50) + '\n', 'render' + Date.now().toString().slice(-4), gameField, activeModal);
 
 	// Загружаем и устанавливаем данные с сервера
 	// useEffect(() => {
@@ -29,14 +39,19 @@ export function useGameState(_: params) {
 		highlightedCells,
 		isCheck,
 		isCheckmate,
+		activeModal,
+		closeGameModal,
 		onClickGameField,
 		onBlur,
 	} as const
 
+	type TGameState = {
+		gameField: GameField,
+	}
 
-	function initGameState() {
+	function initGameState(): TGameState {
 		return ({
-			gameField: new GameField(INITIAL_CELLS, refreshGameState)
+			gameField: new GameField(INITIAL_CELLS, refreshGameState, dispatch, activeModal),
 		})
 	}
 
@@ -45,8 +60,34 @@ export function useGameState(_: params) {
 	}
 
 	function onClickGameField(e: React.MouseEvent) {
+		handleClickIfCell(e)
+		handleClickIfMenu(e)
+	}
+
+	function closeGameModal() {
+		dispatch(closeModal())
+	}
+
+	function handleClickIfMenu(e: React.MouseEvent) {
+		if (!(e.target instanceof HTMLElement) || !activeModal) return
+		const { gameField: gameFieldC, gameModal } = CSSClassNames
+		const el = e.target.closest(`.${gameFieldC} .${gameModal} [data-action-type]`) as HTMLElement
+
+		const actionType = el?.dataset.actionType
+		// Данные, необходимые для точной идентификации действия (~ Индекс массива options)
+		const actionId = el?.dataset.actionId
+
+		if (!actionType) return closeGameModal()
+
+		activeModal.handleAction(gameField, actionType, actionId)
+
+		return true
+	}
+
+	function handleClickIfCell(e: React.MouseEvent) {
 		if (!(e.target instanceof HTMLElement)) return
-		const cellId = Number((e.target.closest('.GameCell') as HTMLElement)?.dataset?.id) as TCellId
+		const { gameCell } = CSSClassNames
+		const cellId = Number((e.target.closest('.' + gameCell) as HTMLElement)?.dataset?.id) as TCellId
 		if (Number.isNaN(cellId)) return
 
 		gameField.handleCellClick(cellId)
@@ -58,7 +99,12 @@ export function useGameState(_: params) {
 
 		if (e.currentTarget.contains(e.relatedTarget)) return
 		gameField.resetSelection()
+		closeGameModal()
 		gameField.update()
 	}
 }
 
+export type TMenuActionAttrs<ModalType extends TMenuType> = {
+	'data-action-type': keyof TMenuConfigsByType[ModalType]['actionHandlers'],
+	'data-action-id': number | string,
+}
