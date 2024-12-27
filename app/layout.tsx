@@ -4,6 +4,8 @@ import "@/public/fonts"
 import "./null.css";
 import "./globals.css";
 import clsx from "clsx";
+import { Providers } from "./providers";
+// import { chessGlyph } from "@/public/fonts";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
