@@ -33,7 +33,7 @@ export function Dropdown({ className, children, data, onClose, closeButton }: pr
 				<button
 					className={clsx(
 						"bg-gray-alt-100 text-gray-alt-500",
-						"font-chess-glyph before:content-['\\0042']",
+						"font-chess-glyph before:content-['\\\\0042']",
 					)}
 					onClick={onClose}
 				>
