@@ -35,7 +35,6 @@ export const MOVE_CONFIRMATIONS: TMoveConfirmationsByPiece = {
 			// Главный модуль в конструкторе создаёт экземпляры вспомогательных и передаёт им this. Затем присваивает их в свои свойства.
 			checkConditions(gameField: GameField, destination: TCellId) {
 				const { yEnd } = SIDE_INFO[gameField.currentMove]
-				console.log(yEnd);
 				return getCellPosition(destination).y === yEnd
 			},
 			menuData: {
